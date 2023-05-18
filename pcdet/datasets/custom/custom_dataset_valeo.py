@@ -65,7 +65,7 @@ class CustomDataset(DatasetTemplate):
         return np.load(str(lidar_file))
     
     def get_radar(self, idx):
-        name = idx + '.npy'
+        name = 'fft_' + idx + '.npy'
         radar_file = self.root_path.parent.parent.parent/ 'sample_data' / 'Valeo' / 'radar0_15' / name
         return np.load(str(radar_file))
     
@@ -202,14 +202,11 @@ class CustomDataset(DatasetTemplate):
 
         sample_idx = info['point_cloud']['lidar_idx']
         get_item_list = self.dataset_cfg.get('GET_ITEM_LIST', ['points'])
-        radar_feature = self.get_radar_feature(sample_idx)
-        radar_features = np.stack((radar_feature[:,4,:], radar_feature[:,7,:], 
-                       radar_feature[:,1,:], radar_feature[:,5,:], 
-                       radar_feature[:,3,:]), axis=1)
-
+        radar_feature = self.get_radar(sample_idx)
+        
         input_dict = {
             'frame_id': sample_idx,
-            'radar_features': radar_features,
+            'radar_features': radar_feature,
         }
 
         if 'annos' in info:
