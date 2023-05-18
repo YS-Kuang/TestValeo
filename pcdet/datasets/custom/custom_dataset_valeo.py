@@ -61,17 +61,17 @@ class CustomDataset(DatasetTemplate):
 
     def get_lidar(self, idx):
         name = idx + '.npy'
-        lidar_file = self.root_path / 'LidarPoint' / name
+        lidar_file = self.root_path.parent.parent.parent/ 'sample_data' / 'Valeo' /'lidar0_15' / name
         return np.load(str(lidar_file))
     
     def get_radar(self, idx):
         name = idx + '.npy'
-        radar_file = self.root_path / 'Radar' / name
+        radar_file = self.root_path.parent.parent.parent/ 'sample_data' / 'Valeo' / 'radar0_15' / name
         return np.load(str(radar_file))
     
     def get_label(self, idx):
         name = idx + '.txt'
-        label_file = self.root_split_path / 'label' / name
+        label_file = self.root_path.parent.parent.parent/ 'sample_data' / 'Valeo' / 'label0_15' / name
         return object3d_custom.get_objects_from_label(label_file)
     
     def get_infos(self, num_workers = 4, sample_id_list = None):
