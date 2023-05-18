@@ -1,5 +1,5 @@
 DATASET: 'CustomDataset'
-DATA_PATH: '/content/TestOpenPCDet/data/custom'
+DATA_PATH: '/content/TestValeo/data/custom'
 
 POINT_CLOUD_RANGE: [0, -40, -2, 80, 40, 3]
 
