@@ -67,7 +67,9 @@ class CustomDataset(DatasetTemplate):
     def get_radar(self, idx):
         name = 'fft_' + idx + '.npy'
         radar_file = self.root_path.parent.parent.parent/ 'sample_data' / 'Valeo' / 'radar0_15' / name
-        return np.load(str(radar_file))
+        radar =  np.load(str(radar_file))
+        radar = np.csingle(radar)
+        return radar
     
     def get_label(self, idx):
         name = idx + '.txt'
