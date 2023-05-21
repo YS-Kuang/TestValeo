@@ -29,7 +29,7 @@ class ProposalTargetLayer(nn.Module):
                 reg_valid_mask: (B, M)
                 rcnn_cls_labels: (B, M)
         """
-        batch_rois, batch_gt_of_rois, batch_roi_ious, batch_roi_scores, batch_roi_labels, batch_roi_features, batch_roi_radar_features = self.sample_rois_for_rcnn(
+        batch_rois, batch_gt_of_rois, batch_roi_ious, batch_roi_scores, batch_roi_labels, batch_roi_features, batch_roi_masks = self.sample_rois_for_rcnn(
             batch_dict=batch_dict
         )
         # regression valid mask
@@ -56,7 +56,7 @@ class ProposalTargetLayer(nn.Module):
 
         targets_dict = {'rois': batch_rois, 'gt_of_rois': batch_gt_of_rois, 'gt_iou_of_rois': batch_roi_ious,
                         'roi_scores': batch_roi_scores, 'roi_labels': batch_roi_labels,
-                        'roi_features': batch_roi_features, 'roi_radar_features': batch_roi_radar_features, 
+                        'roi_features': batch_roi_features, 'roi_masks': batch_roi_masks, 
                         'reg_valid_mask': reg_valid_mask, 'rcnn_cls_labels': batch_cls_labels}
 
         return targets_dict
@@ -78,7 +78,7 @@ class ProposalTargetLayer(nn.Module):
         roi_labels = batch_dict['roi_labels']
         gt_boxes = batch_dict['gt_boxes']
         roi_features = batch_dict['roi_features']
-        roi_radar_features = batch_dict['roi_radar_features']
+        roi_masks = batch_dict['roi_masks']
 
         code_size = rois.shape[-1]
         batch_rois = rois.new_zeros(batch_size, self.roi_sampler_cfg.ROI_PER_IMAGE, code_size)
@@ -87,11 +87,11 @@ class ProposalTargetLayer(nn.Module):
         batch_roi_scores = rois.new_zeros(batch_size, self.roi_sampler_cfg.ROI_PER_IMAGE)
         batch_roi_labels = rois.new_zeros((batch_size, self.roi_sampler_cfg.ROI_PER_IMAGE), dtype=torch.long)
         batch_roi_features = roi_features.new_zeros(batch_size, self.roi_sampler_cfg.ROI_PER_IMAGE, 5, roi_features.shape[-1])
-        batch_roi_radar_features = roi_radar_features.new_zeros(batch_size, self.roi_sampler_cfg.ROI_PER_IMAGE, roi_radar_features.shape[2], roi_radar_features.shape[-1])
+        batch_roi_masks = roi_masks.new_zeros(batch_size,self.roi_sampler_cfg.ROI_PER_IMAGE, roi_masks.shape[2], roi_masks.shape[-1])
         
         for index in range(batch_size):
-            cur_roi, cur_gt, cur_roi_labels, cur_roi_scores, cur_roi_features, cur_roi_radar_features = \
-                rois[index], gt_boxes[index], roi_labels[index], roi_scores[index], roi_features[index], roi_radar_features[index]
+            cur_roi, cur_gt, cur_roi_labels, cur_roi_scores, cur_roi_features, cur_roi_masks = \
+                rois[index], gt_boxes[index], roi_labels[index], roi_scores[index], roi_features[index],  roi_masks[index]
             k = cur_gt.__len__() - 1
             while k >= 0 and cur_gt[k].sum() == 0:
                 k -= 1
@@ -115,9 +115,9 @@ class ProposalTargetLayer(nn.Module):
             batch_roi_scores[index] = cur_roi_scores[sampled_inds]
             batch_gt_of_rois[index] = cur_gt[gt_assignment[sampled_inds]]
             batch_roi_features[index] = cur_roi_features[sampled_inds]
-            batch_roi_radar_features[index] = cur_roi_radar_features[sampled_inds]
+            batch_roi_masks[index] = cur_roi_masks[sampled_inds]
 
-        return batch_rois, batch_gt_of_rois, batch_roi_ious, batch_roi_scores, batch_roi_labels, batch_roi_features, batch_roi_radar_features
+        return batch_rois, batch_gt_of_rois, batch_roi_ious, batch_roi_scores, batch_roi_labels, batch_roi_features, batch_roi_masks
 
     def subsample_rois(self, max_overlaps):
         # sample fg, easy_bg, hard_bg
