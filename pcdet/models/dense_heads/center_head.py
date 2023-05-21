@@ -403,7 +403,7 @@ class CenterHead(nn.Module):
 
 
     @staticmethod
-    def reorder_rois_for_refining(batch_size, pred_dicts, features):
+    def reorder_rois_for_refining(batch_size, pred_dicts, features, masks):
         num_max_rois = max([len(cur_dict['pred_boxes']) for cur_dict in pred_dicts])
         num_max_rois = max(1, num_max_rois)  # at least one faked rois to avoid error
         pred_boxes = pred_dicts[0]['pred_boxes']
@@ -413,6 +413,7 @@ class CenterHead(nn.Module):
         roi_scores = pred_boxes.new_zeros((batch_size, num_max_rois))
         roi_labels = pred_boxes.new_zeros((batch_size, num_max_rois)).long()
         roi_features = pred_boxes.new_zeros((batch_size, num_max_rois, feature_vector_length))
+        roi_masks = pred_boxes.new_zeros((batch_size, num_max_rois, masks[0].shape[1], 2))
 
         for bs_idx in range(batch_size):
             num_boxes = len(pred_dicts[bs_idx]['pred_boxes'])
@@ -421,14 +422,14 @@ class CenterHead(nn.Module):
             roi_scores[bs_idx, :num_boxes] = pred_dicts[bs_idx]['pred_scores']
             roi_labels[bs_idx, :num_boxes] = pred_dicts[bs_idx]['pred_labels']
             roi_features[bs_idx, :num_boxes] = torch.cat([feat[bs_idx] for feat in features], dim=-1)
+            roi_masks[bs_idx, :num_boxes] = masks[bs_idx]
             
-        return rois, roi_scores, roi_labels, roi_features
+        return rois, roi_scores, roi_labels,roi_features, roi_masks
 
     def forward(self, data_dict):
         spatial_features_2d = data_dict['spatial_features_2d']
         x = self.shared_conv(spatial_features_2d)
         frame_id = data_dict['frame_id']
-        roi_radar_features = data_dict['radar_features']
         batch_size = data_dict['batch_size']
 
         pred_dicts = []
@@ -463,7 +464,7 @@ class CenterHead(nn.Module):
               # ## check features list: :(1,4,N,5,412)
               # if 1 == 1:
               #   raise ValueError('%s' %(features[0][0].shape[1]))  
-              rois, roi_scores, roi_labels, roi_features = self.reorder_rois_for_refining(data_dict['batch_size'], pred_dicts, features)
+              rois, roi_scores, roi_labels, roi_features, roi_masks = self.reorder_rois_for_refining(data_dict['batch_size'], pred_dicts, features, masks)
               roi_features = roi_features.reshape(batch_size, -1, 5, 512) # turn off when centerpoint2stage
               ## check roi features
               # if 1 == 1:
@@ -472,7 +473,7 @@ class CenterHead(nn.Module):
               data_dict['roi_scores'] = roi_scores
               data_dict['roi_labels'] = roi_labels
               data_dict['roi_features'] = roi_features #(B, N, 5, 512)
-              data_dict['roi_radar_features'] = roi_radar_features #(B, N, 5, 128)
+              data_dict['roi_masks'] = roi_masks
               data_dict['has_class_labels'] = True
             else:
               data_dict['final_box_dicts'] = pred_dicts
