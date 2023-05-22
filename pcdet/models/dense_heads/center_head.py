@@ -355,6 +355,7 @@ class CenterHead(nn.Module):
         for box in boxes:            
             if num_point == 1 or len(box['pred_boxes']) == 0:
                 centers.append(box['pred_boxes'][:, :3])
+                masks.append(box['pred_boxes'].new_zeros(len(box['pred_boxes']), 9, 2))
                 
             elif num_point == 5:
                 center2d = box['pred_boxes'][:, :2]
