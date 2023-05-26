@@ -223,13 +223,6 @@ class DatasetTemplate(torch_data.Dataset):
                     for k in range(batch_size):
                         batch_gt_boxes3d[k, :val[k].__len__(), :] = val[k]
                     ret[key] = batch_gt_boxes3d
-
-                elif key in ['radar_features']:
-                    max_gt = max([len(x) for x in val])
-                    batch_radar_feature = np.zeros((batch_size, max_gt, val[0].shape[1], val[0].shape[-1]), dtype=np.float32)
-                    for k in range(batch_size):
-                      batch_radar_feature[k, :val[k].__len__(), :] = val[k]
-                    ret[key] = batch_radar_feature
                     
                 elif key in ['roi_boxes']:
                     max_gt = max([x.shape[1] for x in val])
